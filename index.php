@@ -1,8 +1,25 @@
 <?php
+  require 'update_csv.php';
+  define('CSV_FILE', 'productos.csv');
   $resultado = "";
   if( $_SERVER['REQUEST_METHOD']=="POST" && isset($_POST["param1"]) && isset($_POST["param2"]) && isset($_POST["param3"]) ){
     $command = escapeshellcmd('python main.py "'.$_POST['param1'].'" "'.$_POST['param2'].'" "'.$_POST['param3'].'"');
     $resultado = shell_exec($command);
+  }
+
+  if( isset($_POST['store_product'])){
+    $nombre = str_replace(array("\r", "\n", '"'), '', $_POST['param1']);
+    $precio = str_replace('"', '', $_POST['param2']);
+    $proveedor = str_replace(array("\r", "\n"), '', $_POST['param3']);
+    $categoria = str_replace(array("\r", "\n", ""), '', $_POST['param4']);
+    
+    $precio = '$'.$precio;
+    // echo $precio;
+
+    $data = [
+      [$nombre, $precio, $proveedor, $categoria]
+    ];
+    $resultado = process_csv(CSV_FILE,$data);
     unset($_POST["param1"]);
     unset($_POST["param2"]);
     unset($_POST["param3"]);
@@ -40,19 +57,36 @@
     </div>
     <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="POST">
         <div class="mb-3">
-          <label for="exampleInputEmail1" style="margin-left:10px;margin-top:10px;" class="form-label">Nombre del producto</label>
-          <input type="text" name="param1" style="margin-left:10px;margin-right:20px;margin-top:10px;"  class="form-control" id="exampleInputEmail1" >
-          <label for="exampleInputEmail2" style="margin-left:10px;margin-top:10px;"  class="form-label">Precio</label>
-          <input type="text" name="param2" style="margin-left:10px;margin-top:10px;"  class="form-control" id="exampleInputEmail1" >
-          <label for="exampleInputEmail2" style="margin-left:10px;margin-top:10px;"  class="form-label">Proveedor</label>
-          <input type="text" name="param3" style="margin-left:10px;margin-top:10px;"  class="form-control" id="exampleInputEmail1" >
+          <?php if($_SERVER['REQUEST_METHOD']=="POST" && isset($_POST["param1"]) && isset($_POST["param2"]) && isset($_POST["param3"])): ?>
+            <label for="exampleInputEmail1" style="margin-left:10px;margin-top:10px;" class="form-label">Nombre del producto</label>
+            <input type="text" name="param1" style="margin-left:10px;margin-right:20px;margin-top:10px;"  class="form-control" id="exampleInputEmail1" value="<?php echo $_POST['param1'] ?>">
+            <label for="exampleInputEmail2" style="margin-left:10px;margin-top:10px;"  class="form-label">Precio</label>
+            <input type="text" name="param2" style="margin-left:10px;margin-top:10px;"  class="form-control" id="exampleInputEmail1" value="<?php echo $_POST['param2'] ?>">
+            <label for="exampleInputEmail2" style="margin-left:10px;margin-top:10px;"  class="form-label">Proveedor</label>
+            <input type="text" name="param3" style="margin-left:10px;margin-top:10px;"  class="form-control" id="exampleInputEmail1" value="<?php echo $_POST['param3'] ?>">
+          <?php else: ?>
+            <label for="exampleInputEmail1" style="margin-left:10px;margin-top:10px;" class="form-label">Nombre del producto</label>
+            <input type="text" name="param1" style="margin-left:10px;margin-right:20px;margin-top:10px;"  class="form-control" id="exampleInputEmail1" >
+            <label for="exampleInputEmail2" style="margin-left:10px;margin-top:10px;"  class="form-label">Precio</label>
+            <input type="text" name="param2" style="margin-left:10px;margin-top:10px;"  class="form-control" id="exampleInputEmail1" >
+            <label for="exampleInputEmail2" style="margin-left:10px;margin-top:10px;"  class="form-label">Proveedor</label>
+            <input type="text" name="param3" style="margin-left:10px;margin-top:10px;"  class="form-control" id="exampleInputEmail1" >
+          <?php endif; ?>
         </div>
         <button type="submit" class="btn btn-success" style="margin-left: 10px">Buscar categoria</button>
       </form>
+      <?php if($_SERVER['REQUEST_METHOD']=="POST" && isset($_POST["param1"]) && isset($_POST["param2"]) && isset($_POST["param3"]) && $resultado != 'success'): ?>
       <br>
       <label for="resultado" style="margin-left: 10px"> La categoria sugerida es: <?php echo($resultado); ?></label>
       <br>
-      <button type="submit" class="btn btn-success" style="margin-left: 10px;margin-top:10px">¿Deseas guardar tu producto en esta categoria?</button>
+      <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="POST">
+        <input type="hidden" name="param1" value="<?php echo($_POST['param1']); ?>">
+        <input type="hidden" name="param2" value="<?php echo($_POST['param2']); ?>">
+        <input type="hidden" name="param3" value="<?php echo($_POST['param3']); ?>">
+        <input type="hidden" name="param4" value="<?php echo($resultado); ?>">
+        <button type="submit" class="btn btn-success" name="store_product" style="margin-left: 10px;margin-top:10px">¿Deseas guardar tu producto en esta categoria?</button>
+      </form>
+      <?php endif; ?>
       <br>
       <br>
       <br>
